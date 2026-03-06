@@ -101,6 +101,63 @@ resource "aws_lambda_permission" "apigw_lambda" {
   function_name = aws_lambda_function.register_lambda.function_name
   principal     = "apigateway.amazonaws.com"
 
-  # El source_arn es opcional pero recomendado por seguridad
-  # source_arn = "${aws_api_gateway_rest_api.api.execution_arn}/*/*"
+
+}
+# Lambda de Login
+resource "aws_lambda_function" "login_lambda" {
+  filename      = "login.zip"
+  function_name = "login-user-lambda"
+  role          = aws_iam_role.lambda_role.arn
+  handler       = "login.lambda_handler"
+  runtime       = "python3.9"
+
+  environment {
+    variables = {
+      TABLE_NAME = aws_dynamodb_table.users_table.name
+      # Usamos el secreto que ya esta creado arriba
+      JWT_SECRET = aws_secretsmanager_secret_version.jwt_secret_value.secret_string
+    }
+  }
+}
+
+# Permiso para que API Gateway invoque el Login
+resource "aws_lambda_permission" "apigw_login" {
+  statement_id  = "AllowAPIGatewayInvokeLogin"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.login_lambda.function_name
+  principal     = "apigateway.amazonaws.com"
+}
+# Lambda Get Profile
+resource "aws_lambda_function" "get_profile" {
+  filename      = "get_profile.zip"
+  function_name = "get-profile-lambda"
+  role          = aws_iam_role.lambda_role.arn
+  handler       = "get_profile.lambda_handler"
+  runtime       = "python3.9"
+  environment { variables = { TABLE_NAME = aws_dynamodb_table.users_table.name } }
+}
+
+# Lambda Update Profile
+resource "aws_lambda_function" "update_profile" {
+  filename      = "update_profile.zip"
+  function_name = "update-profile-lambda"
+  role          = aws_iam_role.lambda_role.arn
+  handler       = "update_profile.lambda_handler"
+  runtime       = "python3.9"
+  environment { variables = { TABLE_NAME = aws_dynamodb_table.users_table.name } }
+}
+
+# Permisos para API Gateway (Añadir para ambas)
+resource "aws_lambda_permission" "apigw_get" {
+  statement_id  = "AllowGetInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.get_profile.function_name
+  principal     = "apigateway.amazonaws.com"
+}
+
+resource "aws_lambda_permission" "apigw_update" {
+  statement_id  = "AllowUpdateInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.update_profile.function_name
+  principal     = "apigateway.amazonaws.com"
 }

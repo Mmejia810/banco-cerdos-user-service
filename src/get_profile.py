@@ -8,17 +8,17 @@ table = dynamodb.Table(TABLE_NAME)
 
 def lambda_handler(event, context):
     try:
-        
         user_id = event['pathParameters']['user_id']
-        
-        
-        response = table.get_item(Key={'uuid': user_id})
+        documento = event['pathParameters']['documento'] 
+
+        # Se deben enviar AMBAS llaves
+        response = table.get_item(Key={'uuid': user_id, 'documento': documento})
         
         if 'Item' not in response:
-            return {
-                "statusCode": 404,
-                "body": json.dumps({"error": "Usuario no encontrado"})
-            }
+            return {"statusCode": 404, "body": json.dumps({"error": "Usuario no encontrado"})}
+        
+        
+            
 
         user = response['Item']
         

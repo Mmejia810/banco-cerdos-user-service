@@ -1,6 +1,7 @@
 import json
+import os
 import boto3
-import jwt # Esta es la que instalamos
+import jwt 
 import datetime
 from boto3.dynamodb.conditions import Attr
 
@@ -8,7 +9,7 @@ dynamodb = boto3.resource('dynamodb')
 table = dynamodb.Table('users-table')
 
 
-SECRET_KEY = "mi_secreto_super_seguro_123" 
+SECRET_KEY = os.environ.get('JWT_SECRET', 'clave-de-emergencia')
 
 def lambda_handler(event, context):
     try:
