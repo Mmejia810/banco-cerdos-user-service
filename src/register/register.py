@@ -2,6 +2,7 @@ import json
 import boto3
 import uuid
 import os
+import hashlib
 
 # Configuración de AWS
 dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
@@ -26,6 +27,8 @@ def lambda_handler(event, context):
             }
 
         user_uuid = str(uuid.uuid4())
+        password = data['contraseña']
+        hashed_password = hashlib.sha256(password.encode()).hexdigest()
         table = dynamodb.Table(TABLE_NAME)
         
         # 3. Guardar en DynamoDB
@@ -35,7 +38,7 @@ def lambda_handler(event, context):
             "nombre": data.get('nombre', 'Sin nombre'),
             "apellido": data.get('apellido', 'Sin apellido'),
             "correo electrónico": data.get('correo electrónico', 'Sin correo'),
-            "contraseña": data.get('contraseña', 'Sin clave')
+            "contraseña": hashed_password
         })
         
         return {

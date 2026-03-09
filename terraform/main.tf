@@ -85,6 +85,8 @@ resource "aws_lambda_function" "register_lambda" {
   role          = aws_iam_role.lambda_role.arn
   handler       = "register.lambda_handler"
   runtime       = "python3.9"
+  source_code_hash = filebase64sha256("register.zip")
+
 
   environment {
     variables = {
@@ -110,6 +112,7 @@ resource "aws_lambda_function" "login_lambda" {
   role          = aws_iam_role.lambda_role.arn
   handler       = "login.lambda_handler"
   runtime       = "python3.9"
+  source_code_hash = filebase64sha256("login.zip")
 
   environment {
     variables = {
