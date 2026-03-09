@@ -164,3 +164,43 @@ resource "aws_lambda_permission" "apigw_update" {
   function_name = aws_lambda_function.update_profile.function_name
   principal     = "apigateway.amazonaws.com"
 }
+
+# S3 Bucket - Avatares de usuarios
+
+resource "aws_s3_bucket" "avatars_bucket" {
+  bucket = "users-avatar-banco-cerdos-2026"
+}
+
+# S3 Access
+
+resource "aws_iam_role_policy_attachment" "lambda_s3" {
+  role       = aws_iam_role.lambda_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+}
+
+# Lambda Upload Avatar
+
+resource "aws_lambda_function" "upload_avatar" {
+  filename      = "upload_avatar.zip"
+  function_name = "upload-avatar-user-lambda"
+  role          = aws_iam_role.lambda_role.arn
+  handler       = "upload_avatar.lambda_handler"
+  runtime       = "python3.9"
+  source_code_hash = filebase64sha256("upload_avatar.zip")
+
+  environment {
+    variables = {
+      TABLE_NAME  = aws_dynamodb_table.users_table.name
+      BUCKET_NAME = aws_s3_bucket.avatars_bucket.bucket
+    }
+  }
+}
+
+# Permiso para API Gateway (Avatar)
+
+resource "aws_lambda_permission" "apigw_avatar" {
+  statement_id  = "AllowAvatarInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.upload_avatar.function_name
+  principal     = "apigateway.amazonaws.com"
+}
