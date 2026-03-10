@@ -137,6 +137,8 @@ resource "aws_lambda_function" "get_profile" {
   role          = aws_iam_role.lambda_role.arn
   handler       = "get_profile.lambda_handler"
   runtime       = "python3.9"
+  source_code_hash = filebase64sha256("get_profile.zip")
+
   environment { variables = { TABLE_NAME = aws_dynamodb_table.users_table.name } }
 }
 
@@ -147,6 +149,8 @@ resource "aws_lambda_function" "update_profile" {
   role          = aws_iam_role.lambda_role.arn
   handler       = "update_profile.lambda_handler"
   runtime       = "python3.9"
+  source_code_hash = filebase64sha256("update_profile.zip")
+
   environment { variables = { TABLE_NAME = aws_dynamodb_table.users_table.name } }
 }
 
@@ -168,7 +172,7 @@ resource "aws_lambda_permission" "apigw_update" {
 # S3 Bucket - Avatares de usuarios
 
 resource "aws_s3_bucket" "avatars_bucket" {
-  bucket = "users-avatar-banco-cerdos-2026-01"
+  bucket = "users-avatar-banco-cerdos-2026"
 }
 
 # S3 Access
