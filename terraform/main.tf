@@ -168,7 +168,7 @@ resource "aws_lambda_permission" "apigw_update" {
 # S3 Bucket - Avatares de usuarios
 
 resource "aws_s3_bucket" "avatars_bucket" {
-  bucket = "users-avatar-banco-cerdos-2026"
+  bucket = "users-avatar-banco-cerdos-2026-01"
 }
 
 # S3 Access
