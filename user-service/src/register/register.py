@@ -30,17 +30,19 @@ def hashear_password(password: str) -> str:
     # Genera un salt aleatorio y lo combina con la contraseña
     salt = secrets.token_hex(32)
     hashed = hmac.new(salt.encode(), password.encode('utf-8'), hashlib.sha256).hexdigest()
-    return f"{salt}:{hashed}"  # Se guarda salt:hash juntos en DynamoDB
+    return f"{salt}:{hashed}"
 
 
 def lambda_handler(event, context):
     try:
+
         if 'body' in event:
             data = json.loads(event['body']) if isinstance(event['body'], str) else event['body']
         else:
             data = event
 
         campos_requeridos = ['documento', 'nombre', 'apellido', 'email', 'password']
+
         for campo in campos_requeridos:
             if campo not in data:
                 return {
@@ -69,6 +71,7 @@ def lambda_handler(event, context):
             IndexName='email-index',
             KeyConditionExpression=Key('email').eq(data['email'])
         )
+
         if existing.get('Items'):
             return {
                 "statusCode": 409,
@@ -76,7 +79,7 @@ def lambda_handler(event, context):
                 "body": json.dumps({"error": "El correo ya está registrado"})
             }
 
-        # Hashear con hmac + salt 
+        # Hashear contraseña
         hashed_password = hashear_password(data['password'])
 
         user_uuid = str(uuid.uuid4())
@@ -90,7 +93,27 @@ def lambda_handler(event, context):
             "password": hashed_password
         })
 
+        # ----------------------------
+        # Enviar notificación WELCOME
+        # ----------------------------
+        try:
+            sqs.send_message(
+                QueueUrl=QUEUE_URL,
+                MessageBody=json.dumps({
+                    "type": "WELCOME",
+                    "data": {
+                        "fullName": f"{data['nombre']} {data['apellido']}"
+                    }
+                })
+            )
+        except Exception as sqs_error:
+            print(f"[ERROR] SQS WELCOME falló para usuario {user_uuid}: {sqs_error}")
+
+        # ----------------------------
+        # Crear solicitudes de tarjetas
+        # ----------------------------
         sqs_errors = []
+
         for request_type in ["DEBIT", "CREDIT"]:
             try:
                 sqs.send_message(
@@ -104,7 +127,11 @@ def lambda_handler(event, context):
                 sqs_errors.append(f"{request_type}: {str(sqs_error)}")
                 print(f"[ERROR] SQS {request_type} falló para usuario {user_uuid}: {sqs_error}")
 
-        response_body = {"message": "Registro exitoso", "uuid": user_uuid}
+        response_body = {
+            "message": "Registro exitoso",
+            "uuid": user_uuid
+        }
+
         if sqs_errors:
             response_body["sqs_warnings"] = sqs_errors
 
@@ -115,11 +142,12 @@ def lambda_handler(event, context):
         }
 
     except Exception as e:
-     import traceback
-     print(f"[ERROR] lambda_handler: {e}")
-     print(traceback.format_exc())  # ← Agrega esto
-     return {
-        "statusCode": 500,
-        "headers": {"Content-Type": "application/json"},
-        "body": json.dumps({"error": "Error interno del servidor"})
-    }
+        import traceback
+        print(f"[ERROR] lambda_handler: {e}")
+        print(traceback.format_exc())
+
+        return {
+            "statusCode": 500,
+            "headers": {"Content-Type": "application/json"},
+            "body": json.dumps({"error": "Error interno del servidor"})
+        }
