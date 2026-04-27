@@ -1,20 +1,38 @@
-# 🐷 Banco Cerdos - User Service
+banco-cerdos-user-service
+Microservicios de la plataforma Banco Cerdo encargados del registro y gestión de usuarios, tarjetas, transacciones y notificaciones. Arquitectura serverless en AWS gestionada con Terraform.
 
-Este microservicio se encarga del registro de usuarios en la plataforma de Banco Cerdos. Utiliza una arquitectura Serverless en AWS gestionada con Terraform.
+Servicios
+ServicioResponsabilidaduser-serviceRegistro, login, perfil y actualización de usuarioscard-serviceGestión de tarjetas débito y créditotransaction-serviceProcesamiento de transacciones bancariasnotifications-serviceEnvío de notificaciones y alertas
 
-## 🚀 Arquitectura
-* **API Gateway**: Punto de entrada (REST API) para las peticiones externas.
-* **AWS Lambda**: Función en Python 3.9 que procesa la lógica de registro.
-* **DynamoDB**: Tabla NoSQL (`users-table`) donde se almacena la información.
-* **SQS**: Cola para peticiones de creación de tarjetas físicas/virtuales.
+Stack
 
-## 🛠️ Requisitos Previos
-1. Tener instalado [Terraform](https://www.terraform.io/downloads).
-2. Tener configurado [AWS CLI](https://aws.amazon.com/cli/) con credenciales en la región `us-east-1`.
-3. Python 3.9 o superior.
+AWS Lambda
+AWS API Gateway
+Terraform
+Node.js
+JWT
 
-## 📦 Despliegue
 
-1. **Preparar el código de la Lambda:**
-   Ve a la carpeta `src` y comprime el archivo:
-   ```powershell
+Arquitectura
+AWS API Gateway
+      |
+  ----+--------------------+------------------+
+  |                        |                  |
+user-service          card-service   transaction-service
+                                              |
+                                  notifications-service
+Cada servicio corre como una función Lambda independiente. La infraestructura está declarada como código con Terraform, lo que permite reproducir el entorno completo con un solo comando.
+
+Despliegue
+bashterraform init
+terraform plan
+terraform apply
+
+Repositorios relacionados
+
+Frontend: Banco_cerdo_fronted
+Flujo de pagos: banco-cerdos-payment-flow
+
+
+Autor
+Mauricio José Mejía Morales — github.com/Mmejia810
